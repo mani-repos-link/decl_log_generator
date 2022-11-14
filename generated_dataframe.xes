@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<log xes.version="1849-2016" xes.features="nested-attributes" xmlns="http://www.xes-standard.org/">
+	<extension name="Time" prefix="time" uri="http://www.xes-standard.org/time.xesext" />
+	<extension name="Concept" prefix="concept" uri="http://www.xes-standard.org/concept.xesext" />
+	<string key="origin" value="csv" />
+	<trace>
+		<string key="concept:name" value="0" />
+		<event>
+			<int key="case_id" value="0" />
+			<string key="concept:name" value="grade" />
+			<float key="time:timestamp" value="1668459065.725995" />
+			<int key="@@index" value="0" />
+		</event>
+	</trace>
+	<trace>
+		<string key="concept:name" value="1" />
+		<event>
+			<int key="case_id" value="1" />
+			<string key="concept:name" value="grade" />
+			<float key="time:timestamp" value="1668459065.726" />
+			<int key="@@index" value="1" />
+		</event>
+	</trace>
+	<trace>
+		<string key="concept:name" value="2" />
+		<event>
+			<int key="case_id" value="2" />
+			<string key="concept:name" value="grade" />
+			<float key="time:timestamp" value="1668459065.726005" />
+			<int key="@@index" value="2" />
+		</event>
+	</trace>
+	<trace>
+		<string key="concept:name" value="3" />
+		<event>
+			<int key="case_id" value="3" />
+			<string key="concept:name" value="grade" />
+			<float key="time:timestamp" value="1668459065.726011" />
+			<int key="@@index" value="3" />
+		</event>
+	</trace>
+</log>
