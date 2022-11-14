@@ -1,3 +1,4 @@
+import pathlib
 from datetime import datetime
 
 import clingo
@@ -10,6 +11,8 @@ import pandas as pd
 from abstracts.log_generator import Log_generator
 from alp import DECLARE2LP
 from parsers.declare.declare import DeclareParser
+import os
+from pathlib import Path
 
 
 class ASP_generator(Log_generator):
@@ -21,7 +24,7 @@ class ASP_generator(Log_generator):
         self.decl_model_path = decl_model_path
         self.template_path = template_path
         self.encoding_path = encoding_path
-        self.trace_xes: [lg.Trace] = []
+        self.clingo_output = []
 
     def __decl_model_to_lp_file(self):
         with open(self.decl_model_path, "r") as file:
@@ -42,11 +45,14 @@ class ASP_generator(Log_generator):
         ctl.load(decl2lp_file)
         ctl.ground([("base", [])], context=self)
         out = ctl.solve(on_model=self.__handle_clingo_result)
-        print(out)
+        os.remove(decl2lp_file)
 
     def __handle_clingo_result(self, output: clingo.solving.Model):
-        result = output.symbols(shown=True)
-        print(result)
+        self.clingo_output = output.symbols(shown=True)
+
+    def __parse_clingo_result(self):
+        # TODO: improve
+        result = self.clingo_output
         traced = {}
         for m in result:  # create dict
             trace_name = str(m.name)
@@ -63,17 +69,16 @@ class ASP_generator(Log_generator):
                         if num not in traced:
                             traced[num] = {}
                         traced[num][trace_name] = l
-        self.to_xes_with_dataframe(traced, "generated_dataframe.xes")
-        self.to_xes(traced, "generated_exporter.xes")
-        print(traced)
+        return traced
 
-    def to_xes(self, traced, output_fn: str):
+    def to_xes(self, output_fn: str):
         e_log = lg.EventLog()
         e_log.extensions["concept"] = {}
         e_log.extensions["concept"]["name"] = lg.XESExtension.Concept.name
         e_log.extensions["concept"]["prefix"] = lg.XESExtension.Concept.prefix
         e_log.extensions["concept"]["uri"] = lg.XESExtension.Concept.uri
 
+        traced = self.__parse_clingo_result()
         for trace_id in range(len(traced)):
             trace_gen = lg.Trace()
             trace_gen.attributes["concept:name"] = f"trace_{trace_id}"
@@ -87,13 +92,13 @@ class ASP_generator(Log_generator):
                     event[e[i][0]] = e[i][1]
                     event["time:timestamp"] = datetime.now().timestamp()  # + timedelta(hours=c).datetime
                     trace_gen.append(event)
-            self.trace_xes.append(trace_gen)
             e_log.append(trace_gen)
 
         exporter.apply(e_log, output_fn)
 
-    def to_xes_with_dataframe(self, traced, output_filename: str):
+    def to_xes_with_dataframe(self,  output_filename: str):
         lines = []
+        traced = self.__parse_clingo_result()
         for trace_id in range(len(traced)):
             line = {'case_id': trace_id}
             for i in traced:
