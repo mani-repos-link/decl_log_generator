@@ -7,12 +7,43 @@ from json import JSONEncoder
 import re
 import boolean
 
-from parsers.declare.declare_model import DeclareEventAttributeType
-from parsers.declare.declare_model import DeclareEventValueType
-from parsers.declare.declare_model import DeclareModel
-from parsers.declare.declare_model import ConstraintTemplates
-from parsers.declare.declare_constraint_resolver import DeclareConstraintConditionResolver, \
-    DeclareConstraintResolver
+exception_occur = 0
+try:
+    from parsers.declare.declare_model import DeclareEventAttributeType
+    from parsers.declare.declare_model import DeclareEventValueType
+    from parsers.declare.declare_model import DeclareModel
+    from parsers.declare.declare_model import ConstraintTemplates
+    from parsers.declare.declare_constraint_resolver import DeclareConstraintConditionResolver, \
+        DeclareConstraintResolver
+except:
+    exception_occur = exception_occur + 1
+    pass
+
+
+try:
+    from .parsers.declare.declare_model import DeclareEventAttributeType
+    from .parsers.declare.declare_model import DeclareEventValueType
+    from .parsers.declare.declare_model import DeclareModel
+    from .parsers.declare.declare_model import ConstraintTemplates
+    from .parsers.declare.declare_constraint_resolver import DeclareConstraintConditionResolver, \
+        DeclareConstraintResolver
+except:
+    exception_occur = exception_occur + 1
+    pass
+
+try:
+    from ..parsers.declare.declare_model import DeclareEventAttributeType
+    from ..parsers.declare.declare_model import DeclareEventValueType
+    from ..parsers.declare.declare_model import DeclareModel
+    from ..parsers.declare.declare_model import ConstraintTemplates
+    from ..parsers.declare.declare_constraint_resolver import DeclareConstraintConditionResolver, \
+        DeclareConstraintResolver
+except:
+    exception_occur = exception_occur + 1
+    pass
+
+if exception_occur == 3:
+    raise ImportError("Failed to import parser module")
 
 """
 Declare Model Syntax

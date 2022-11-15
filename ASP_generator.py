@@ -10,7 +10,7 @@ from pm4py.objects.log.exporter.xes import exporter
 import pandas as pd
 
 from abstracts.log_generator import Log_generator
-from alp import DECLARE2LP
+from alp.declare2LP import DECLARE2LP
 from parsers.declare.declare import DeclareParser
 import os
 
