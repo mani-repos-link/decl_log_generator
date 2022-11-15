@@ -76,6 +76,12 @@ class DeclareModel(object):
     templates: [ConstraintTemplates] = []
     templates_dict: dict[str, [ConstraintTemplates]] = {}
 
+    def __init__(self):
+        self.events = {}
+        self.attributes = {}
+        self.templates = []
+        self.templates_dict = {}
+
     def to_str(self) -> str:
         st = f"""{{ "events":{self.events},"templates": {self.templates_dict}, "attributes": {self.attributes} }}"""
         return st.replace("'", '"')

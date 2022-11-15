@@ -9,13 +9,13 @@ from pm4py.objects.log import obj as lg
 from pm4py.objects.log.exporter.xes import exporter
 import pandas as pd
 
-from abstracts.log_generator import Log_generator
-from alp.declare2LP import DECLARE2LP
-from parsers.declare.declare import DeclareParser
+from src.log_generator.abstracts.logGenerator import LogGenerator
+from src.log_generator.alp.declare2Lp import Declare2lp
+from src.log_generator.parsers.declare.declare import DeclareParser
 import os
 
 
-class ASP_generator(Log_generator):
+class ASPGenerator(LogGenerator):
 
     def __init__(self,
                  num_traces: int, min_event: int, max_event: int,
@@ -31,7 +31,7 @@ class ASP_generator(Log_generator):
         with open(self.decl_model_path, "r") as file:
             d2a = DeclareParser(file.read())
             dm = d2a.parse()
-            lp_model = DECLARE2LP().from_decl(dm)
+            lp_model = Declare2lp().from_decl(dm)
             lp = lp_model.__str__()
         # with tempfile.NamedTemporaryFile() as tmp:  # TODO: improve it
         with open("generated.lp", "w+") as tmp:

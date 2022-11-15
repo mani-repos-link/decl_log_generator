@@ -3,47 +3,16 @@ from __future__ import annotations
 import warnings
 from enum import Enum
 import typing
-from json import JSONEncoder
 import re
-import boolean
-
-exception_occur = 0
-try:
-    from parsers.declare.declare_model import DeclareEventAttributeType
-    from parsers.declare.declare_model import DeclareEventValueType
-    from parsers.declare.declare_model import DeclareModel
-    from parsers.declare.declare_model import ConstraintTemplates
-    from parsers.declare.declare_constraint_resolver import DeclareConstraintConditionResolver, \
-        DeclareConstraintResolver
-except:
-    exception_occur = exception_occur + 1
-    pass
 
 
-try:
-    from .parsers.declare.declare_model import DeclareEventAttributeType
-    from .parsers.declare.declare_model import DeclareEventValueType
-    from .parsers.declare.declare_model import DeclareModel
-    from .parsers.declare.declare_model import ConstraintTemplates
-    from .parsers.declare.declare_constraint_resolver import DeclareConstraintConditionResolver, \
-        DeclareConstraintResolver
-except:
-    exception_occur = exception_occur + 1
-    pass
+from src.log_generator.parsers.declare.declare_model import DeclareEventAttributeType
+from src.log_generator.parsers.declare.declare_model import DeclareEventValueType
+from src.log_generator.parsers.declare.declare_model import DeclareModel
+# from src.log_generator.parsers.declare.declare_model import ConstraintTemplates
+# from src.log_generator.parsers.declare.declare_constraint_resolver import DeclareConstraintConditionResolver
+from src.log_generator.parsers.declare.declare_constraint_resolver import DeclareConstraintResolver
 
-try:
-    from ..parsers.declare.declare_model import DeclareEventAttributeType
-    from ..parsers.declare.declare_model import DeclareEventValueType
-    from ..parsers.declare.declare_model import DeclareModel
-    from ..parsers.declare.declare_model import ConstraintTemplates
-    from ..parsers.declare.declare_constraint_resolver import DeclareConstraintConditionResolver, \
-        DeclareConstraintResolver
-except:
-    exception_occur = exception_occur + 1
-    pass
-
-if exception_occur == 3:
-    raise ImportError("Failed to import parser module")
 
 """
 Declare Model Syntax
@@ -122,6 +91,7 @@ class DeclareParser:
 
     def __init__(self, content: typing.Union[str, typing.List[str]]):
         self.load_declare_content(content)
+        self.model = DeclareModel()
 
     def load_declare_content(self, content: typing.Union[str, typing.List[str]]):
         if isinstance(content, str):

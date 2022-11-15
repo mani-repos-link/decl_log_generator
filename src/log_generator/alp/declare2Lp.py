@@ -3,46 +3,13 @@ TODO: LP doesn't support float, thus we hav to Scale floating attribute bounds t
 """
 import typing
 from typing import Dict
-import os
-import sys
-import pathlib
 
-SCRIPT_DIR = os.path.join(pathlib.Path(__file__).parent.resolve().parent.resolve())
-sys.path.append(os.path.dirname(SCRIPT_DIR))
-print(SCRIPT_DIR)
-SCRIPT_DIR = os.path.join(pathlib.Path(__file__).parent.resolve().parent.resolve().parent.resolve())
-sys.path.append(os.path.dirname(SCRIPT_DIR))
-
-print(SCRIPT_DIR)
-
-exception_occur = 0
-try:
-    from parsers.declare.declare_constraint_resolver import DeclareConstraintConditionResolver
-    from parsers.declare.declare_model import DeclareEventAttributeType, DeclareEventValueType, \
-        ConstraintTemplates, DeclareModel
-except:
-    try:
-        from .parsers.declare.declare_constraint_resolver import DeclareConstraintConditionResolver
-        from .parsers.declare.declare_model import DeclareEventAttributeType, DeclareEventValueType, \
-            ConstraintTemplates, DeclareModel
-    except:
-        try:
-            from ..parsers.declare.declare_constraint_resolver import DeclareConstraintConditionResolver
-            from ..parsers.declare.declare_model import DeclareEventAttributeType, DeclareEventValueType, \
-            ConstraintTemplates, DeclareModel
-        except:
-            try:
-                from decl_log_generator.parsers.declare.declare_constraint_resolver import DeclareConstraintConditionResolver
-                from decl_log_generator.parsers.declare.declare_model import DeclareEventAttributeType, DeclareEventValueType, \
-                ConstraintTemplates, DeclareModel
-            except:
-                pass
+from src.log_generator.parsers.declare.declare_constraint_resolver import DeclareConstraintConditionResolver
+from src.log_generator.parsers.declare.declare_model import DeclareEventAttributeType, DeclareEventValueType, \
+    ConstraintTemplates, DeclareModel
 
 
-
-
-
-class LP_BUILDER:
+class LpBuilder:
     lines: [str] = []
     attributes_values: [str] = []
     templates_s: [str] = []
@@ -95,13 +62,13 @@ class LP_BUILDER:
         return line
 
 
-class DECLARE2LP:
-    lp: LP_BUILDER
+class Declare2lp:
+    lp: LpBuilder
 
     def __init__(self) -> None:
-        self.lp = LP_BUILDER()
+        self.lp = LpBuilder()
 
-    def from_decl(self, model: DeclareModel) -> LP_BUILDER:
+    def from_decl(self, model: DeclareModel) -> LpBuilder:
         keys = model.events.keys()
         for k in keys:
             obj = model.events[k]

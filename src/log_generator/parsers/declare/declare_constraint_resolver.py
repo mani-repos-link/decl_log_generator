@@ -4,8 +4,8 @@ import re
 import typing
 import boolean
 
-from parsers.declare.declare_model import ConstraintTemplates
-from parsers.declare.declare_model import DeclareEventValueType
+from src.log_generator.parsers.declare.declare_model import ConstraintTemplates
+from src.log_generator.parsers.declare.declare_model import DeclareEventValueType
 
 # class ConstrainTemplates:
 CONSTRAINTS_TEMPLATES = {

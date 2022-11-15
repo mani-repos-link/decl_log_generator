@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class Log_generator(ABC):
+class LogGenerator(ABC):
     def __init__(self,
                  num_traces: int,
                  min_event: int,
