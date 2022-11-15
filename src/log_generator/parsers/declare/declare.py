@@ -25,7 +25,8 @@ bind A: grade                               # defining an attribute or property.
 bind A: mark, name                          # defining multiple attributes or properties together
 activity B
 bind B: grade, mark, name
-grade, mark: integer between 1 and 5        # multiple props/attrs declaration as far as they share the same declaration type. the types can be: integer, float, enumeration
+grade, mark: integer between 1 and 5        # multiple props/attrs declaration as far as they share the same declaration
+                                            # type. the types can be: integer, float, enumeration
 # mark: float between 2 and 9.5             # start '#' char we can consider line as comment
 name: x, y, z, v                            # data declaration as enumeration 
 
@@ -61,22 +62,19 @@ A label can be check in constraint using `is` keyword and can
 be negate `is not`. ie. `template[a,b] |a is x| b is not x |1,2,s`
 
 
-
 SUGGESTIONS OR DOUBTS
  - comment lines starting from `#`
- - have some reserve words
+ - have some reserve words such as integer, float, between, and
  
-
-
 """
 
 
-class DECLARE_RESERVED:
+class DeclareReserved:
     words = ["is", "not", "in", "between", "integer", "float", "enumeration", "and"]
     condition_symbols = [">", "<", "=", "is", ">=", "<=", "is not", "in", "not"]
 
 
-class DECLARE_LINE_DEFINITION(Enum):
+class DeclareLineDefinition(Enum):
     DEFINE_EVENT_LINE = 1
     DEFINE_PROP_LINE = 2  # TODO: fix name
     DEFINE_PROP_VALUE_LINE = 3  # Constraints
@@ -238,6 +236,6 @@ class DeclareParser:
             lis.append(ct)
 
     def __is_reserved_keyboard(self, word: str) -> bool:
-        ws = DECLARE_RESERVED.words
+        ws = DeclareReserved.words
         return word in ws
 
