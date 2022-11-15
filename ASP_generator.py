@@ -1,4 +1,5 @@
-import pathlib
+from __future__ import annotations
+
 from datetime import datetime
 
 import clingo
@@ -12,7 +13,6 @@ from abstracts.log_generator import Log_generator
 from alp import DECLARE2LP
 from parsers.declare.declare import DeclareParser
 import os
-from pathlib import Path
 
 
 class ASP_generator(Log_generator):
@@ -25,6 +25,7 @@ class ASP_generator(Log_generator):
         self.template_path = template_path
         self.encoding_path = encoding_path
         self.clingo_output = []
+        self.log: lg.EventLog | None = None
 
     def __decl_model_to_lp_file(self):
         with open(self.decl_model_path, "r") as file:
@@ -45,10 +46,11 @@ class ASP_generator(Log_generator):
         ctl.load(decl2lp_file)
         ctl.ground([("base", [])], context=self)
         out = ctl.solve(on_model=self.__handle_clingo_result)
-        os.remove(decl2lp_file)
+        os.remove(decl2lp_file)  # removes the temporary decl->lp modal file created
 
     def __handle_clingo_result(self, output: clingo.solving.Model):
         self.clingo_output = output.symbols(shown=True)
+        self.__pm4py_log()
 
     def __parse_clingo_result(self):
         # TODO: improve
@@ -71,12 +73,12 @@ class ASP_generator(Log_generator):
                         traced[num][trace_name] = l
         return traced
 
-    def to_xes(self, output_fn: str):
-        e_log = lg.EventLog()
-        e_log.extensions["concept"] = {}
-        e_log.extensions["concept"]["name"] = lg.XESExtension.Concept.name
-        e_log.extensions["concept"]["prefix"] = lg.XESExtension.Concept.prefix
-        e_log.extensions["concept"]["uri"] = lg.XESExtension.Concept.uri
+    def __pm4py_log(self):
+        self.log = lg.EventLog()
+        self.log.extensions["concept"] = {}
+        self.log.extensions["concept"]["name"] = lg.XESExtension.Concept.name
+        self.log.extensions["concept"]["prefix"] = lg.XESExtension.Concept.prefix
+        self.log.extensions["concept"]["uri"] = lg.XESExtension.Concept.uri
 
         traced = self.__parse_clingo_result()
         for trace_id in range(len(traced)):
@@ -92,9 +94,12 @@ class ASP_generator(Log_generator):
                     event[e[i][0]] = e[i][1]
                     event["time:timestamp"] = datetime.now().timestamp()  # + timedelta(hours=c).datetime
                     trace_gen.append(event)
-            e_log.append(trace_gen)
+            self.log.append(trace_gen)
 
-        exporter.apply(e_log, output_fn)
+    def to_xes(self, output_fn: str):
+        if self.log is None:
+            self.__pm4py_log()
+        exporter.apply(self.log, output_fn)
 
     def to_xes_with_dataframe(self,  output_filename: str):
         lines = []
@@ -115,3 +120,4 @@ class ASP_generator(Log_generator):
                                     timestamp_key='time:timestamp')
         logger = pm4py.convert_to_event_log(dt)
         pm4py.write_xes(logger, output_filename)
+
