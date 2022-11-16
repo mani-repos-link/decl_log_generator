@@ -45,20 +45,6 @@ class DeclareEventAttributeType(object):
         self.is_range_typ = is_range_typ
         self.value = value
 
-    # def __iter__(self):
-    #     yield from {
-    #         "typ": self.typ,
-    #         "is_range_typ": self.is_range_typ,
-    #         "value": self.value
-    #     }.items()
-
-    # def __dict__(self):
-    #     return {"typ", self.typ}
-
-    # def __str__(self):
-    #     return f"""{{"typ": {self.typ or "null"},"is_range_typ": {self.is_range_typ or "null"},"value": {self.value or "null"}}}"""
-    #     # return json.dumps(self, ensure_ascii=False)
-
     def toJson(self):
         return json.dumps(self, default=lambda o: o.__dict__,)
 
@@ -83,7 +69,7 @@ class DeclareModel(object):
         self.templates_dict = {}
 
     def to_str(self) -> str:
-        st = f"""{{ "events":{self.events},"templates": {self.templates_dict}, "attributes": {self.attributes} }}"""
+        st = f"""{{ "events":{self.events}, "templates": {self.templates_dict}, "attributes": {self.attributes} }}"""
         return st.replace("'", '"')
 
     def __str__(self):
@@ -91,8 +77,7 @@ class DeclareModel(object):
         return json.dumps(j, indent=4)
 
     def __repr__(self):
-        j = json.loads(self.to_str())
-        return json.dumps(j, indent=4)
+        return self.__str__()
 
     def __dict__(self):
         return json.loads(self.to_str())

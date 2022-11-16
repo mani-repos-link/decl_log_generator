@@ -78,7 +78,6 @@ class DeclareConstraintConditionResolver:
                 if s and len(s) > 0:
                     ls = ls + s
         if ct.correlation_cond:
-            print(ct.correlation_cond)
             ls.append("")
             target = ct.events_list[1]
             ls.append('target({},{}).'.format(idx, target.lower()))
@@ -197,9 +196,6 @@ class DeclareConstraintConditionResolver:
             else:
                 condition_name = condition + '_condition_' + ''.join(
                     [str(symbol).split('_')[2] for symbol in expression.get_symbols()])
-                # for symbol in expression.get_symbols():
-                #     print(symbol)
-                # print("condition_name", condition_name, expression)
                 while condition_name in conditions_names:
                     condition_name = condition_name + '_'
                 conditions_names.add(condition_name)
@@ -257,16 +253,19 @@ class DeclareConstraintResolver:
     def __parse_constraint_conditions(self, conditions_part: str, ct_model: ConstraintTemplates):
         conds_list = conditions_part.strip().strip("|").split("|")
         conds_len = len(conds_list)
-        if conds_len == 1:
-            ct_model.active_cond = conds_list[0].strip()
-        elif conds_len == 2:
-            ct_model.active_cond = conds_list[0].strip()
-            ct_model.correlation_cond = conds_list[1].strip()
-        elif conds_len == 3:
-            ct_model.active_cond = conds_list[0].strip()
-            ct_model.correlation_cond = conds_list[1].strip()
-            ct_model.ts = conds_list[2].strip()
-        else:  # TODO: what to in this case
+        if conds_len >= 1:
+            active = conds_list[0].strip()
+            if active and len(active) > 0:
+                ct_model.active_cond = active
+        if conds_len >= 2:
+            correlated = conds_list[1].strip()
+            if correlated and len(correlated) > 0:
+                ct_model.correlation_cond = correlated
+        if conds_len == 3:
+            time = conds_list[2].strip()
+            if time and len(time) > 0:
+                ct_model.ts = time
+        if conds_len > 3:  # TODO: what to in this case
             raise ValueError(f"Unable to parse the line due to the exceeds conditions (> 3)")
         return ct_model
 

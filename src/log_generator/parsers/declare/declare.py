@@ -130,8 +130,26 @@ class DeclareParser:
         return x is not None
 
     def is_events_attrs_value_definition(self, line: str) -> bool:
-        x = re.search("^(?!bind)[a-zA-Z_, ]+[0-9]* *: *[\w, ]+", line, re.MULTILINE)
-        return x is not None
+        # x = re.search("^(?!bind)[a-zA-Z_, ]+[0-9]* *: *[\w, ]+", line, re.MULTILINE)
+        """
+        categorical: c1, c2, c3
+        categorical: group1:v1, group1:v2, group3:v1       <-------- Fails to parse this line
+        integer: integer between 0 and 100
+        org:resource: 10
+        org:resource, org:vote: 10
+        org:vote, grade: 9
+        org:categorical: integer between 0 and 100
+        categorical: integer between 0 and 100
+        base, mark: integer between 0 and 100
+        org:res, grade, concept:name: integer between 0 and 100
+        :param line: declare line
+        :return:
+        """
+        x = re.search("^(?!bind)([a-zA-Z_,0-9: ]+) *(: *[\w, ]+)$", line, re.MULTILINE)
+        if x is None:
+            return False
+        groups_len = len(x.groups())
+        return groups_len >= 2
 
     def is_constraint_template_definition(self, line: str) -> bool:
         x = re.search(self.CONSTRAINTS_TEMPLATES_PATTERN, line, re.MULTILINE)
@@ -174,11 +192,32 @@ class DeclareParser:
                 self.model.attributes[p] = [props[p]]
 
     def __parse_attrs_values_definition(self, line: str, line_idx: int):
-        arr = line.strip().split(':')  # grade, mark: integer between 1 and 5
+        """
+        Parse declare lines of assigning values to attributes
+
+        possible lines for assigning values to attributes
+            categorical: c1, c2, c3
+            categorical: group1:v1, group1:v2, group3:v1       <-------- Fails to parse this line
+            integer: integer between 0 and 100
+            org:resource: 10
+            org:resource, org:vote: 10
+            org:vote, grade: 9
+            org:categorical: integer between 0 and 100
+            categorical: integer between 0 and 100
+            base, mark: integer between 0 and 100
+            org:res, grade, concept:name: integer between 0 and 100
+
+        We use ": " (column with space after) to split the line in order have two parts.
+        Assume that on the left part are defined the attributes and on the right side the values
+        :param line: declare line
+        :return: void
+        """
+
+        arr = line.strip().split(': ')  # grade, mark: integer between 1 and 5
         if len(arr) != 2:
             raise ValueError(f"Failed to parse in line {line_idx}: {line}")
-        props = arr[0].strip().split(",")
-        value = arr[1].strip()
+        props = arr[0].strip().split(", ")  # TODO: still to improve  maybe using encoding to avoid if attribute name contains "," char.
+        value = arr[1].strip()  # TODO: don't know yet how can be improved if there is an complex enum value "gro,up:v2"
         dopt = self.__parse_attr_value(value, line_idx)
         for p in props:
             p = p.strip()
@@ -198,7 +237,8 @@ class DeclareParser:
         # value: x, y, z, v                  #  <--- enumeration
         integer_range_rx = "^integer[ ]+between[ ]+[+-]?\d+[ ]+and[ ]+[+-]?\d+$"
         float_range_rx = "^float[ ]+between[ ]+[+-]?\d+(\.\d+)?[ ]+and[ ]+[+-]?\d+(\.\d+)?$"
-        enume_rx = "^[\w]+(,[ ]*[\w.]+)*$"  # matches -> [xyz, xyz, dfs], [12,45,78.54,454]
+        # enume_rx = "^[\w]+(,[ ]*[\w.]+)*$"  # matches -> [xyz, xyz, dfs], [12,45,78.54,454]
+        enume_rx = "^[\w,:]+ *(, *[\w:]+)*$"  # matches -> [xyz, xyz, dfs], [12,45,78.54,454]
         value = value.strip()
         dopt = DeclareEventAttributeType()
         dopt.value = value
