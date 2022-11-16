@@ -7,10 +7,10 @@ from datetime import datetime
 import numpy as np
 import clingo
 from clingo import SymbolType
-import pm4py
-from pm4py.objects.log import obj as lg
-from pm4py.objects.log.exporter.xes import exporter
-import pandas as pd
+# import pm4py
+# from pm4py.objects.log import obj as lg
+# from pm4py.objects.log.exporter.xes import exporter
+# import pandas as pd
 
 from src.log_generator.abstracts.logGenerator import LogGenerator
 from src.log_generator.alp.declare2Lp import Declare2lp
@@ -25,6 +25,25 @@ class ASPCustomEventModel:
     pos: int
     resource: [{str, str}] = []
 
+    def __init__(self, fact_symbol: [clingo.symbol.Symbol]):
+        self.fact_symbol = fact_symbol
+        self.parse_clingo_event()
+        self.resource = []
+
+    def parse_clingo_event(self):
+        for symbols in self.fact_symbol:
+            if symbols.type == SymbolType.Function:
+                self.name = str(symbols.name)
+            if symbols.type == SymbolType.Number:
+                self.pos = symbols.number
+
+    
+    def __str__(self) -> str:
+        return f"""name: {self.name}, pos: {self.pos}, resources: {str(self.resource)}"""
+
+    def __repr__(self) -> str:
+        return f"""name: {self.name}, pos: {self.pos}, resources: {str(self.resource)}"""
+
 
 class ASPCustomTraceModel:
     name: str
@@ -32,16 +51,37 @@ class ASPCustomTraceModel:
 
     def __init__(self, model: clingo.solving.Model):
         self.model = model
+        self.parse_clingo_trace()
 
     def parse_clingo_trace(self):
-        for m in self.model:  # create dict
+        e = {}
+        assigned_values_symbols = []
+        for m in self.model:  # self.model = [trace(),.. trace(),.., assigned_value(...),...]
             trace_name = str(m.name)
             if trace_name == "trace":  # fact "trace(event_name, position)"
-                eventModel = ASPCustomEventModel()
-                event_name = m.arguments[0]
-                # eventModel.name = event_name.arg
-                print("Arguments", m.arguments, "event_name", event_name.type)
+                eventModel = ASPCustomEventModel(m.arguments)
+                e[eventModel.pos] = eventModel
+                self.events.append(eventModel)
+            if trace_name == "assigned_value":
+                assigned_values_symbols.append(m.arguments)
 
+        for assigned_value_symbol in assigned_values_symbols:
+            resource_name, resource_val, pos = self.parse_clingo_val_assignement(assigned_value_symbol)
+            event = e[pos]
+            event.resource.append({resource_name: resource_val})
+        print(self.events)
+        print(self.model)
+    
+    def parse_clingo_val_assignement(self, syb: typing.List[clingo.symbol.Symbol]):
+        val = []
+        for symbols in syb:
+            if symbols.type == SymbolType.Function:  # if symbol is functionm it can have .arguments
+                val.append(symbols.name)
+            else:
+                val.append(symbols.number)
+        return val[0], val[1], val[2]
+
+            
 
 class AspCustomLogModel:
     traces: [ASPCustomTraceModel] = []
@@ -72,7 +112,7 @@ class ASPGenerator(LogGenerator):
         self.template_path = template_path
         self.encoding_path = encoding_path
         self.clingo_output = []
-        self.log: lg.EventLog | None = None
+        # self.log: lg.EventLog | None = None
         d = Distributor()
         self.counter: collections.Counter | None = d.distribution(min_event, max_event, num_traces,
                                                                   distributor_type, custom_probabilities)
@@ -102,6 +142,7 @@ class ASPGenerator(LogGenerator):
         asp_model = AspCustomLogModel()
         for clingo_trace in self.clingo_output:
             traceModel = ASPCustomTraceModel(clingo_trace)
+            break
             # for m in clingo_trace:  # create dict
             #     trace_name = str(m.name)
             #     if trace_name == "trace":  # fact "trace(event_name, position)"
@@ -163,33 +204,34 @@ class ASPGenerator(LogGenerator):
         return traced
 
     def __pm4py_log(self):
-        self.log = lg.EventLog()
-        self.log.extensions["concept"] = {}
-        self.log.extensions["concept"]["name"] = lg.XESExtension.Concept.name
-        self.log.extensions["concept"]["prefix"] = lg.XESExtension.Concept.prefix
-        self.log.extensions["concept"]["uri"] = lg.XESExtension.Concept.uri
+        # self.log = lg.EventLog()
+        # self.log.extensions["concept"] = {}
+        # self.log.extensions["concept"]["name"] = lg.XESExtension.Concept.name
+        # self.log.extensions["concept"]["prefix"] = lg.XESExtension.Concept.prefix
+        # self.log.extensions["concept"]["uri"] = lg.XESExtension.Concept.uri
 
-        traced = self.__parse_clingo_result()
-        print(traced)
-        for trace_id in range(len(traced)):
-            trace_gen = lg.Trace()
-            trace_gen.attributes["concept:name"] = f"trace_{trace_id}"
-            for i in traced:
-                trace = traced[i]
-                event_name = trace["trace"][0]
-                e = {i: trace[i] for i in trace if i != 'trace'}  # filter trace by removing trace key
-                for i in e:  # e = {'assigned_value': ['grade', '5', '1']}
-                    event = lg.Event()
-                    event["concept:name"] = event_name
-                    event[e[i][0]] = e[i][1]
-                    event["time:timestamp"] = datetime.now().timestamp()  # + timedelta(hours=c).datetime
-                    trace_gen.append(event)
-            self.log.append(trace_gen)
+        # traced = self.__parse_clingo_result()
+        # print(traced)
+        # for trace_id in range(len(traced)):
+        #     trace_gen = lg.Trace()
+        #     trace_gen.attributes["concept:name"] = f"trace_{trace_id}"
+        #     for i in traced:
+        #         trace = traced[i]
+        #         event_name = trace["trace"][0]
+        #         e = {i: trace[i] for i in trace if i != 'trace'}  # filter trace by removing trace key
+        #         for i in e:  # e = {'assigned_value': ['grade', '5', '1']}
+        #             event = lg.Event()
+        #             event["concept:name"] = event_name
+        #             event[e[i][0]] = e[i][1]
+        #             event["time:timestamp"] = datetime.now().timestamp()  # + timedelta(hours=c).datetime
+        #             trace_gen.append(event)
+        #     self.log.append(trace_gen)
+        pass
 
     def to_xes(self, output_fn: str):
         if self.log is None:
             self.__pm4py_log()
-        exporter.apply(self.log, output_fn)
+        # exporter.apply(self.log, output_fn)
 
     def to_xes_with_dataframe(self, output_filename: str):
         lines = []
@@ -205,8 +247,8 @@ class ASPGenerator(LogGenerator):
                     line['concept:name'] = e[i][0]
                     line["time:timestamp"] = datetime.now().timestamp()  # + timedelta(hours=c).datetime
             lines.append(line)
-        dt = pd.DataFrame(lines)
-        dt = pm4py.format_dataframe(dt, case_id='case_id', activity_key='concept:name',
-                                    timestamp_key='time:timestamp')
-        logger = pm4py.convert_to_event_log(dt)
-        pm4py.write_xes(logger, output_filename)
+        # dt = pd.DataFrame(lines)
+        # dt = pm4py.format_dataframe(dt, case_id='case_id', activity_key='concept:name',
+                                    # timestamp_key='time:timestamp')
+        # logger = pm4py.convert_to_event_log(dt)
+        # pm4py.write_xes(logger, output_filename)
