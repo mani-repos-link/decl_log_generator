@@ -20,10 +20,49 @@ import os
 from random import randrange
 
 
+class ASPCustomEventModel:
+    name: str
+    pos: int
+    resource: [{str, str}] = []
+
+
+class ASPCustomTraceModel:
+    name: str
+    events: [ASPCustomEventModel] = []
+
+    def __init__(self, model: clingo.solving.Model):
+        self.model = model
+
+    def parse_clingo_trace(self):
+        for m in self.model:  # create dict
+            trace_name = str(m.name)
+            if trace_name == "trace":  # fact "trace(event_name, position)"
+                eventModel = ASPCustomEventModel()
+                event_name = m.arguments[0]
+                # eventModel.name = event_name.arg
+                print("Arguments", m.arguments, "event_name", event_name.type)
+
+
+class AspCustomLogModel:
+    traces: [ASPCustomTraceModel] = []
+# var = {
+#     "trace_1": [
+#         {
+#             "event": "b",
+#             "pos": 1,
+#             "resources": [
+#                 {"grade": "xxx"},
+#                 {"driver": "xxx"},
+#                 {"time": "dt"},
+#             ]
+#         }
+#     ]
+# }
+
+
 class ASPGenerator(LogGenerator):
 
-    def __init__(self,
-                 num_traces: int, min_event: int, max_event: int,
+    def __init__(self, num_traces: int, min_event: int, max_event: int,
                  decl_model_path: str, template_path: str, encoding_path: str,
                  distributor_type: typing.Literal["uniform", "normal", "custom"] = "uniform",
                  custom_probabilities: typing.Optional[typing.List[float]] = None
@@ -54,26 +93,52 @@ class ASPGenerator(LogGenerator):
         self.clingo_output = []
         for events, traces in self.counter.items():
             random_seed = randrange(0, 2 ** 32 - 1)
-            # print("events=", events, "traces=", traces, "seed=", random_seed)
+            print("events=", events, "traces=", traces, "seed=", random_seed)
             self.__generate_traces(decl2lp_file, events, traces, random_seed)
-        for i in self.clingo_output:
-            print(i)
+        self.__format_asp()
         os.remove(decl2lp_file)  # removes the temporary decl->lp modal file created
 
-    def __generate_traces(self, decl_model_lp: str,
+    def __format_asp(self):
+        asp_model = AspCustomLogModel()
+        for clingo_trace in self.clingo_output:
+            traceModel = ASPCustomTraceModel(clingo_trace)
+            # for m in clingo_trace:  # create dict
+            #     trace_name = str(m.name)
+            #     if trace_name == "trace":  # fact "trace(event_name, position)"
+            #         eventModel = ASPCustomEventModel()
+            #         event_name = m.arguments[0]
+            #         # eventModel.name = event_name.arg
+            #         print("Arguments", m.arguments, "event_name", event_name.type)
+            #     print(trace_name)
+                # arg_len = len(m.arguments)
+                # l, i = ([], 0)
+                # for arg in m.arguments:  # resources
+                #     i = i + 1
+                #     if arg.type == SymbolType.Function:
+                #         l.append(str(arg.name))
+                #     if arg.type == SymbolType.Number:
+                #         num = str(arg.number)
+                #         l.append(num)
+                #         if i == arg_len:
+                #             if num not in traced:
+                #                 traced[num] = {}
+                #             traced[num][trace_name] = l
+
+    def __generate_traces(self, decl_model_lp_file: str,
                           num_events: int, num_traces: int,
                           seed: int, freq: float = 0.9, ):
         ctl = clingo.Control(
             [f"-c t={num_events}", f"{num_traces}", f"--seed={seed}", f"--rand-freq={freq}"])  # TODO: add parameters
         ctl.load(self.encoding_path)
         ctl.load(self.template_path)
-        ctl.load(decl_model_lp)
+        ctl.load(decl_model_lp_file)
         ctl.ground([("base", [])], context=self)
         ctl.solve(on_model=self.__handle_clingo_result)
 
     def __handle_clingo_result(self, output: clingo.solving.Model):
-        self.clingo_output.append(output.symbols(shown=True))
-        # print(self.clingo_output)
+        symbols = output.symbols(shown=True)
+        self.clingo_output.append(symbols)
+        # print("output", output)
         # self.__pm4py_log()
 
     def __parse_clingo_result(self):
