@@ -14,5 +14,4 @@ asp = ASPGenerator(
 )
 
 asp.run()
-# asp.to_xes_with_dataframe("output_xes/generated_dataframe.xes")
-# asp.to_xes("output_xes/generated_exporter.xes")
+asp.to_xes("output_xes/generated_exporter.xes")
