@@ -125,7 +125,8 @@ class DeclareParser:
         return x is not None
 
     def is_event_attributes_definition(self, line: str) -> bool:
-        x = re.search("^bind [a-zA-Z_]+[0-9]* *: *[\w, ]+$", line, re.MULTILINE)
+        # x = re.search("^bind [a-zA-Z_]+[0-9]* *: *[\w, ]+$", line, re.MULTILINE)  # not good for "bind: org:resource"
+        x = re.search("^bind (.*?)+$", line, re.MULTILINE)
         return x is not None
 
     def is_events_attrs_value_definition(self, line: str) -> bool:

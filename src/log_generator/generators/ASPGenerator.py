@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import collections
+import typing
 from datetime import datetime
 
+import numpy as np
 import clingo
 from clingo import SymbolType
 import pm4py
@@ -11,21 +14,29 @@ import pandas as pd
 
 from src.log_generator.abstracts.logGenerator import LogGenerator
 from src.log_generator.alp.declare2Lp import Declare2lp
+from src.log_generator.distributions.distribution import Distributor
 from src.log_generator.parsers.declare.declare import DeclareParser
 import os
+from random import randrange
 
 
 class ASPGenerator(LogGenerator):
 
     def __init__(self,
                  num_traces: int, min_event: int, max_event: int,
-                 decl_model_path: str, template_path: str, encoding_path: str):
+                 decl_model_path: str, template_path: str, encoding_path: str,
+                 distributor_type: typing.Literal["uniform", "normal", "custom"] = "uniform",
+                 custom_probabilities: typing.Optional[typing.List[float]] = None
+                 ):
         super().__init__(num_traces, min_event, max_event)
         self.decl_model_path = decl_model_path
         self.template_path = template_path
         self.encoding_path = encoding_path
         self.clingo_output = []
         self.log: lg.EventLog | None = None
+        d = Distributor()
+        self.counter: collections.Counter | None = d.distribution(min_event, max_event, num_traces,
+                                                                  distributor_type, custom_probabilities)
 
     def __decl_model_to_lp_file(self):
         with open(self.decl_model_path, "r") as file:
@@ -40,17 +51,30 @@ class ASPGenerator(LogGenerator):
 
     def run(self):
         decl2lp_file = self.__decl_model_to_lp_file()
-        ctl = clingo.Control([f"-c t={self.num_traces}", "1"])  # TODO: add parameters
-        ctl.load(self.encoding_path)
-        ctl.load(self.template_path)
-        ctl.load(decl2lp_file)
-        ctl.ground([("base", [])], context=self)
-        out = ctl.solve(on_model=self.__handle_clingo_result)
+        self.clingo_output = []
+        for events, traces in self.counter.items():
+            random_seed = randrange(0, 2 ** 32 - 1)
+            # print("events=", events, "traces=", traces, "seed=", random_seed)
+            self.__generate_traces(decl2lp_file, events, traces, random_seed)
+        for i in self.clingo_output:
+            print(i)
         os.remove(decl2lp_file)  # removes the temporary decl->lp modal file created
 
+    def __generate_traces(self, decl_model_lp: str,
+                          num_events: int, num_traces: int,
+                          seed: int, freq: float = 0.9, ):
+        ctl = clingo.Control(
+            [f"-c t={num_events}", f"{num_traces}", f"--seed={seed}", f"--rand-freq={freq}"])  # TODO: add parameters
+        ctl.load(self.encoding_path)
+        ctl.load(self.template_path)
+        ctl.load(decl_model_lp)
+        ctl.ground([("base", [])], context=self)
+        ctl.solve(on_model=self.__handle_clingo_result)
+
     def __handle_clingo_result(self, output: clingo.solving.Model):
-        self.clingo_output = output.symbols(shown=True)
-        self.__pm4py_log()
+        self.clingo_output.append(output.symbols(shown=True))
+        # print(self.clingo_output)
+        # self.__pm4py_log()
 
     def __parse_clingo_result(self):
         # TODO: improve
@@ -81,6 +105,7 @@ class ASPGenerator(LogGenerator):
         self.log.extensions["concept"]["uri"] = lg.XESExtension.Concept.uri
 
         traced = self.__parse_clingo_result()
+        print(traced)
         for trace_id in range(len(traced)):
             trace_gen = lg.Trace()
             trace_gen.attributes["concept:name"] = f"trace_{trace_id}"
@@ -101,7 +126,7 @@ class ASPGenerator(LogGenerator):
             self.__pm4py_log()
         exporter.apply(self.log, output_fn)
 
-    def to_xes_with_dataframe(self,  output_filename: str):
+    def to_xes_with_dataframe(self, output_filename: str):
         lines = []
         traced = self.__parse_clingo_result()
         for trace_id in range(len(traced)):
@@ -120,4 +145,3 @@ class ASPGenerator(LogGenerator):
                                     timestamp_key='time:timestamp')
         logger = pm4py.convert_to_event_log(dt)
         pm4py.write_xes(logger, output_filename)
-

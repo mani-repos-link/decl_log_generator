@@ -78,6 +78,7 @@ class DeclareConstraintConditionResolver:
                 if s and len(s) > 0:
                     ls = ls + s
         if ct.correlation_cond:
+            print(ct.correlation_cond)
             ls.append("")
             target = ct.events_list[1]
             ls.append('target({},{}).'.format(idx, target.lower()))
